@@ -1,0 +1,50 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+interface ApplicationContext {
++ Object getBean(String name)
++ Object getBean(Class clazz)
+}
+
+class ClassPathApplicationContext implements ApplicationContext {
+'- File configFile
+- Map<String, Bean> namesToBeans
+- Map<Class, Bean> classesToBeans
+
++ void ClassPathApplicationContext(String path)
++ Object getBean(String name)
++ Object getBean(Class clazz)
+}
+
+ClassPathApplicationContext *-- Bean
+ConfigLoader --> Bean
+BeanCreator --> Bean
+ClassPathApplicationContext -> ConfigLoader
+ClassPathApplicationContext --> BeanCreator
+
+class ConfigLoader {
+'+ Map<String, BeanConfig> beanConfigs;
+- List<Bean> readConfig(InputStream) {static}
+'+ BeanConfig getBeanConfig(String beanName)
+}
+
+'ConfigLoader *-- BeanConfig
+
+
+class BeanCreator {
++ instantiate(Bean) {static}
+- void fillProperties(Bean) {static}
+- void injectDependencies(Bean) {static}
+}
+
+
+class Bean {
++ String beanName
++ String className
++ Map<String, String> properties
++ Map<String, String> dependencies
++ Object instance
+}
+
+
+@enduml

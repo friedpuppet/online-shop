@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/mvc
+        http://www.springframework.org/schema/mvc/spring-mvc.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <context:component-scan base-package="ua.yelisieiev"/>
+
+    <bean id="productsService" class="ua.yelisieiev.service.ProductsService">
+        <property name="ProductPersistence" ref="jdbcProductPersistence"/>
+    </bean>
+
+    <bean id="jdbcProductPersistence" class="ua.yelisieiev.persistence.jdbc.JdbcProductPersistence">
+        <property name="dataSource" ref="pgSimpleDataSource"/>
+    </bean>
+
+    <bean id="pgSimpleDataSource" class="org.postgresql.ds.PGSimpleDataSource">
+        <property name="serverNames" value="instances.spawn.cc"/>
+        <property name="portNumbers" value="32090"/>
+        <property name="databaseName" value="foobardb"/>
+        <property name="user" value="spawn_admin_uBsj"/>
+        <property name="password" value="4AXKnwjUxnEzFuMa"/>
+    </bean>
+
+    <!-- freemarker config -->
+    <bean id="freemarkerConfig" class="org.springframework.web.servlet.view.freemarker.FreeMarkerConfigurer">
+        <property name="templateLoaderPath" value="classpath:/templates"/>
+    </bean>
+
+    <!--
+      View resolvers can also be configured with ResourceBundles or XML files. If you need
+      different view resolving based on Locale, you have to use the resource bundle resolver.
+    -->
+    <bean id="viewResolver" class="org.springframework.web.servlet.view.freemarker.FreeMarkerViewResolver">
+        <property name="cache" value="true"/>
+        <property name="prefix" value=""/>
+        <property name="suffix" value=".html"/>
+    </bean>
+
+    <mvc:annotation-driven/>
+
+</beans>

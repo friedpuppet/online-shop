@@ -1,0 +1,1 @@
+CREATE TABLE onlineshop.products (id SERIAL PRIMARY KEY, name VARCHAR(200) NOT NULL, price DECIMAL NOT NULL);
