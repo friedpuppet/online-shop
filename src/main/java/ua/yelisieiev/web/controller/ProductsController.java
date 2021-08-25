@@ -15,9 +15,11 @@ import ua.yelisieiev.web.PageWriter;
 
 import java.util.List;
 
-@Controller
+@RequestMapping("/admin")
+@Controller()
 public class ProductsController {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
+
     @Autowired
     private ProductsService productsService;
 

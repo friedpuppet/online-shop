@@ -26,7 +26,7 @@
     <!--    </servlet>-->
     <!--    <servlet>-->
     <!--        <servlet-name>Login</servlet-name>-->
-    <!--        <servlet-class>ua.yelisieiev.web.servlet.LoginServlet</servlet-class>-->
+    <!--        <servlet-class>ua.yelisieiev.web.controller.UserSessionController</servlet-class>-->
     <!--    </servlet>-->
 
     <!--    <servlet-mapping>-->
@@ -42,15 +42,16 @@
     <!--        <url-pattern>/login</url-pattern>-->
     <!--    </servlet-mapping>-->
 
-    <!--    <filter>-->
-    <!--        <filter-name>SecurityFilter</filter-name>-->
-    <!--        <filter-class>ua.yelisieiev.web.filter.SecurityFilter</filter-class>-->
-    <!--    </filter>-->
+        <filter>
+            <filter-name>SecurityFilter</filter-name>
+            <filter-class>ua.yelisieiev.web.filter.SecurityFilter</filter-class>
+        </filter>
 
-    <!--    <filter-mapping>-->
-    <!--        <filter-name>SecurityFilter</filter-name>-->
-    <!--        <servlet-name>Product</servlet-name>-->
-    <!--        <dispatcher>REQUEST</dispatcher>-->
-    <!--    </filter-mapping>-->
+        <filter-mapping>
+            <filter-name>SecurityFilter</filter-name>
+<!--            <servlet-name>Dispatcher</servlet-name>-->
+            <url-pattern>/admin/product/*</url-pattern>
+            <dispatcher>REQUEST</dispatcher>
+        </filter-mapping>
 
 </web-app>

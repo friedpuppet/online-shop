@@ -14,12 +14,21 @@
     <context:component-scan base-package="ua.yelisieiev"/>
 
     <bean id="productsService" class="ua.yelisieiev.service.ProductsService">
-        <property name="ProductPersistence" ref="jdbcProductPersistence"/>
+        <property name="productDao" ref="jdbcProductDao"/>
     </bean>
 
-    <bean id="jdbcProductPersistence" class="ua.yelisieiev.persistence.jdbc.JdbcProductPersistence">
+    <bean id="jdbcProductDao" class="ua.yelisieiev.dao.jdbc.JdbcProductDao">
         <property name="dataSource" ref="pgSimpleDataSource"/>
     </bean>
+
+    <bean id="securityService" class="ua.yelisieiev.service.SecurityService">
+        <property name="dao" ref="jdbcSecurityDao"/>
+    </bean>
+
+    <bean id="jdbcSecurityDao" class="ua.yelisieiev.dao.jdbc.JdbcSecurityDao">
+        <property name="dataSource" ref="pgSimpleDataSource"/>
+    </bean>
+
 
     <bean id="pgSimpleDataSource" class="org.postgresql.ds.PGSimpleDataSource">
         <property name="serverNames" value="instances.spawn.cc"/>

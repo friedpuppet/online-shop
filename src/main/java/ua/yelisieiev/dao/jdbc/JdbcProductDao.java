@@ -1,27 +1,27 @@
-package ua.yelisieiev.persistence.jdbc;
+package ua.yelisieiev.dao.jdbc;
 
 import ua.yelisieiev.entity.Product;
-import ua.yelisieiev.persistence.ProductPersistence;
-import ua.yelisieiev.persistence.PersistenceException;
+import ua.yelisieiev.dao.ProductDao;
+import ua.yelisieiev.dao.DaoException;
 
 import javax.sql.DataSource;
 import java.sql.*;
 import java.util.LinkedList;
 import java.util.List;
 
-public class JdbcProductPersistence implements ProductPersistence {
+public class JdbcProductDao implements ProductDao {
     public void setDataSource(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
     private DataSource dataSource;
 
-    public JdbcProductPersistence(DataSource dataSource) throws PersistenceException {
+    public JdbcProductDao(DataSource dataSource) throws DaoException {
         this.dataSource = dataSource;
     }
 
     @Override
-    public List<Product> getAll() throws PersistenceException {
+    public List<Product> getAll() throws DaoException {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement getAllStatement = getGetAllStatement(connection)) {
             getAllStatement.execute();
@@ -34,12 +34,12 @@ public class JdbcProductPersistence implements ProductPersistence {
                 return products;
             }
         } catch (SQLException e) {
-            throw new PersistenceException("Unable to get products", e);
+            throw new DaoException("Unable to get products", e);
         }
     }
 
     @Override
-    public List<Product> getAllFiltered(String searchExpression) throws PersistenceException {
+    public List<Product> getAllFiltered(String searchExpression) throws DaoException {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement getAllFilteredStatement = getGetAllFilteredStatement(connection)) {
             getAllFilteredStatement.setString(1, "%" + searchExpression + "%");
@@ -54,12 +54,12 @@ public class JdbcProductPersistence implements ProductPersistence {
                 return products;
             }
         } catch (SQLException e) {
-            throw new PersistenceException("Unable to get products", e);
+            throw new DaoException("Unable to get products", e);
         }
     }
 
     @Override
-    synchronized public void add(Product product) throws PersistenceException {
+    synchronized public void add(Product product) throws DaoException {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement addStatement = getAddStatement(connection)) {
 //            addStatement.setInt(1, newId);
@@ -73,12 +73,12 @@ public class JdbcProductPersistence implements ProductPersistence {
                 product.setId(new Product.Id(newId));
             }
         } catch (SQLException e) {
-            throw new PersistenceException("Unable to add product " + product, e);
+            throw new DaoException("Unable to add product " + product, e);
         }
     }
 
     @Override
-    public Product get(Product.Id productId) throws PersistenceException {
+    public Product get(Product.Id productId) throws DaoException {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement getStatement = getGetStatement(connection)) {
             getStatement.setInt(1, productId.getValue());
@@ -90,23 +90,23 @@ public class JdbcProductPersistence implements ProductPersistence {
                 return getProductFromResultSetRow(resultSet);
             }
         } catch (SQLException e) {
-            throw new PersistenceException("Unable to get product with id {" + productId + "}", e);
+            throw new DaoException("Unable to get product with id {" + productId + "}", e);
         }
     }
 
     @Override
-    public void delete(Product.Id productId) throws PersistenceException {
+    public void delete(Product.Id productId) throws DaoException {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement getStatement = getDeleteStatement(connection)) {
             getStatement.setInt(1, productId.getValue());
             getStatement.executeUpdate();
         } catch (SQLException e) {
-            throw new PersistenceException("Unable to delete product with id {" + productId + "}", e);
+            throw new DaoException("Unable to delete product with id {" + productId + "}", e);
         }
     }
 
     @Override
-    public void update(Product updatedProduct) throws PersistenceException {
+    public void update(Product updatedProduct) throws DaoException {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement updateStatement = getUpdateStatement(connection)) {
             updateStatement.setString(1, updatedProduct.getName());
@@ -115,10 +115,10 @@ public class JdbcProductPersistence implements ProductPersistence {
             updateStatement.setInt(4, updatedProduct.getId().getValue());
             updateStatement.executeUpdate();
             if (updateStatement.getUpdateCount() == 0) {
-                throw new PersistenceException("No product to update");
+                throw new DaoException("No product to update");
             }
         } catch (SQLException e) {
-            throw new PersistenceException("Unable to update product " + updatedProduct, e);
+            throw new DaoException("Unable to update product " + updatedProduct, e);
         }
     }
 

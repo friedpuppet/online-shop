@@ -1,15 +1,15 @@
 package ua.yelisieiev.service;
 
-import org.flywaydb.core.Flyway;
-import org.flywaydb.core.api.configuration.FluentConfiguration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.postgresql.ds.PGSimpleDataSource;
+import ua.yelisieiev.dao.SecurityDao;
+import ua.yelisieiev.entity.AuthTokenWithTTL;
+import ua.yelisieiev.service.mock.MockSecurityDao;
 
-import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
+import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -20,29 +20,13 @@ class SecurityServiceTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        PGSimpleDataSource dataSource = new PGSimpleDataSource();
-        String[] bdServers = {"instances.spawn.cc"};
-        dataSource.setServerNames(bdServers);
-        int[] bdPorts = {32213};
-        dataSource.setPortNumbers(bdPorts);
-        dataSource.setDatabaseName("foobardb");
-        dataSource.setUser("spawn_admin_uBsj");
-        dataSource.setPassword("a7r6UIwxa34eY0n5");
+        SecurityDao dao = new MockSecurityDao();
 
-        FluentConfiguration configure = Flyway.configure();
-        configure.dataSource(dataSource);
-        Flyway flyway = configure.schemas("onlineshop").load();
-        flyway.clean();
-        flyway.migrate();
-
-        try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement()) {
-            statement.execute("INSERT INTO onlineshop.users (id, name, password) VALUES(1, 'root', 'GOD');");
-            statement.execute("INSERT INTO onlineshop.users (id, name, password) VALUES(2, 'game', 'ORIGIN');");
-            statement.execute("INSERT INTO onlineshop.users (id, name, password) VALUES(3, 'play', 'SUCK');");
-        }
-
-        securityService = new SecurityService(dataSource);
+        securityService = new SecurityService(dao);
+        securityService.createUser("root", "GOD");
+        securityService.createUser("alex", "DEVIL");
+        AuthTokenWithTTL rootToken = new AuthTokenWithTTL("0d0d611a-1994-46c2-a763-d47ca5df6f38", LocalDateTime.now().plusHours(4));
+        securityService.createAndSaveToken("root");
     }
 
     @DisplayName("Using correct login and password - get authenticated")
@@ -66,22 +50,22 @@ class SecurityServiceTest {
     @DisplayName("Using existing login - create new token - and get its value")
     @Test
     void test_createToken_getValue() {
-        String token = securityService.createToken("root", "11");
+        AuthTokenWithTTL token = securityService.createAndSaveToken("root");
         assertNotNull(token);
-        assertEquals(token.length(), 36);
+        assertEquals(token.getToken().length(), 36);
     }
 
     @DisplayName("Using nonexistent login - create new token - and get error")
     @Test
     void test_nonexistentUser_createToken_getError() {
-        assertThrows(RuntimeException.class, () -> securityService.createToken("user", "11"));
+        assertThrows(RuntimeException.class, () -> securityService.createAndSaveToken("user"));
     }
 
     @DisplayName("Check existing token - receive true")
     @Test
     void test_checkValidToken_getTrue() {
-        String token = securityService.createToken("root", "11");
-        assertTrue(securityService.isTokenValid(token));
+        AuthTokenWithTTL token = securityService.createAndSaveToken("root");
+        assertTrue(securityService.isTokenValid(token.getToken()));
     }
 
     @DisplayName("Check nonexistent token - receive false")
@@ -89,4 +73,20 @@ class SecurityServiceTest {
     void test_checkInvalidToken_getFalse() {
         assertFalse(securityService.isTokenValid(UUID.randomUUID().toString()));
     }
+
+    @DisplayName("With existing token - logout")
+    @Test
+    void test_existingTokenLogout() {
+        Optional<AuthTokenWithTTL> token = securityService.login("root", "GOD");
+        securityService.logout(token.get().getToken());
+        assertFalse(securityService.isTokenValid(token.get().getToken()));
+    }
+
+    @DisplayName("With nonexistent token - logout")
+    @Test
+    void test_nonexistentTokenLogout() {
+        securityService.logout("000000000");
+        assertFalse(securityService.isTokenValid("000000000"));
+    }
+
 }

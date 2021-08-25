@@ -1,16 +1,15 @@
-package ua.yelisieiev.persistence.jdbc;
+package ua.yelisieiev.dao.jdbc;
 
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.configuration.FluentConfiguration;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
-import ua.yelisieiev.persistence.PersistenceException;
-import ua.yelisieiev.persistence.ProductPersistenceTest;
+import ua.yelisieiev.dao.DaoException;
+import ua.yelisieiev.dao.AbstractProductDaoTest;
 
-class JdbcProductPersistenceTest extends ProductPersistenceTest {
+class JdbcProductDaoTest extends AbstractProductDaoTest {
     @BeforeEach
-    void createPersistence() throws PersistenceException {
-//        System.out.println(System.getProperty("java.class.path"));
+    void createPersistence() throws DaoException {
         // H2
         JdbcDataSource dataSource = new JdbcDataSource();
         dataSource.setURL("jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE");
@@ -24,6 +23,6 @@ class JdbcProductPersistenceTest extends ProductPersistenceTest {
         flyway.clean();
         flyway.migrate();
 
-        setPersistence(new JdbcProductPersistence(dataSource));
+        setDao(new JdbcProductDao(dataSource));
     }
 }

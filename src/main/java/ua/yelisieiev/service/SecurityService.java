@@ -1,70 +1,79 @@
 package ua.yelisieiev.service;
 
-import javax.sql.DataSource;
-import java.sql.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import ua.yelisieiev.dao.SecurityDao;
+import ua.yelisieiev.entity.AuthTokenWithTTL;
+import ua.yelisieiev.entity.User;
+import ua.yelisieiev.util.crypto.Encrypter;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 public class SecurityService {
-    private DataSource dataSource;
+    public static final int TOKEN_TTL_MINUTES = 24 * 60;
 
-    public SecurityService(DataSource dataSource) {
-        this.dataSource = dataSource;
+    @Autowired
+    private SecurityDao dao;
+
+    public SecurityService(SecurityDao dao) {
+        this.dao = dao;
     }
 
-    public boolean isLoginPassValid(String login, String password) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.
-                     prepareStatement("SELECT count(1) AS cnt FROM onlineshop.users u where u.name = ? AND u.password = ?;")) {
-            statement.setString(1, login);
-            statement.setString(2, password);
-            statement.execute();
-            try (ResultSet resultSet = statement.getResultSet()) {
-                if (!resultSet.next()) {
-                    return false;
-                }
-                Integer count = resultSet.getInt(1);
-                if (count == 0) {
-                    return false;
-                }
-                return true;
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error validating user", e);
+    public void setDao(SecurityDao dao) {
+        this.dao = dao;
+    }
+
+    public Optional<AuthTokenWithTTL> login(String login, String providedPassword) {
+        if (!isLoginPassValid(login, providedPassword)) {
+            return Optional.empty();
         }
+        return Optional.of(createAndSaveToken(login));
     }
 
-    public String createToken(String login, String sessionId) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.
-                     prepareStatement("INSERT INTO onlineshop.tokens (user_id, token) " +
-                             "SELECT id, ? FROM onlineshop.users u WHERE u.name = ?;")) {
-            String token = UUID.randomUUID().toString();
-            statement.setString(1, token);
-            statement.setString(2, login);
-            statement.execute();
-            if (statement.getUpdateCount() != 1) {
-                throw new SQLException("No token was created");
-            }
-            return token;
-        } catch (SQLException e) {
-            throw new RuntimeException("Error creating token", e);
-        }
-    }
-
-    public boolean isTokenValid(String token) {
-        if (token == null) {
+    protected boolean isLoginPassValid(String login, String providedPassword) {
+        Optional<User> user = dao.getUser(login);
+        if (user.isEmpty()) {
             return false;
         }
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.
-                     prepareStatement("SELECT 1 FROM onlineshop.tokens t WHERE t.token = ?;")) {
-            statement.setString(1, token);
-            statement.execute();
-            try (ResultSet resultSet = statement.getResultSet()) {
-                return resultSet.next();
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error validating token", e);
+        String providedHash = Encrypter.encryptPassword(providedPassword, user.get().getPasswordSalt());
+        if (!providedHash.equals(user.get().getPasswordHash())) {
+            return false;
         }
+        return true;
+    }
+
+    protected AuthTokenWithTTL createAndSaveToken(String login) {
+        String tokenString = UUID.randomUUID().toString();
+        AuthTokenWithTTL token = new AuthTokenWithTTL(tokenString, LocalDateTime.now().plusMinutes(TOKEN_TTL_MINUTES));
+        dao.saveUserToken(login, token);
+        return token;
+    }
+
+    public boolean isTokenValid(String tokenString) {
+        if (tokenString == null) {
+            return false;
+        }
+        Optional<AuthTokenWithTTL> token = dao.getTokenByString(tokenString);
+        if (token.isEmpty()) {
+            return false;
+        }
+        if (token.get().getValidUntil().isBefore(LocalDateTime.now())) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public void createUser(String login, String password) {
+        User user = new User(login);
+        final String passwordSalt = Encrypter.generateSalt();
+        user.setPasswordSalt(passwordSalt);
+        user.setPasswordHash(Encrypter.encryptPassword(password, passwordSalt));
+        dao.createUser(user);
+    }
+
+    public void logout(String tokenString) {
+        dao.deleteToken(tokenString);
     }
 }

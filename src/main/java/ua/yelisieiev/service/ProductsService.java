@@ -1,27 +1,29 @@
 package ua.yelisieiev.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import ua.yelisieiev.entity.Product;
-import ua.yelisieiev.persistence.ProductPersistence;
-import ua.yelisieiev.persistence.PersistenceException;
+import ua.yelisieiev.dao.ProductDao;
+import ua.yelisieiev.dao.DaoException;
 
 import java.util.List;
 
 public class ProductsService {
 
-    public void setProductPersistence(ProductPersistence productPersistence) {
-        this.productPersistence = productPersistence;
+    public void setProductDao(ProductDao productDao) {
+        this.productDao = productDao;
     }
 
-    private ProductPersistence productPersistence;
+    @Autowired
+    private ProductDao productDao;
 
-    public ProductsService(ProductPersistence productPersistence) {
-        this.productPersistence = productPersistence;
+    public ProductsService(ProductDao productDao) {
+        this.productDao = productDao;
     }
 
     public List<Product> getAll() throws ProductServiceException {
         try {
-            return productPersistence.getAll();
-        } catch (PersistenceException e) {
+            return productDao.getAll();
+        } catch (DaoException e) {
             throw new ProductServiceException(e);
         }
     }
@@ -33,40 +35,40 @@ public class ProductsService {
      */
     public void add(Product product) throws ProductServiceException {
         try {
-            productPersistence.add(product);
-        } catch (PersistenceException e) {
+            productDao.add(product);
+        } catch (DaoException e) {
             throw new ProductServiceException(e);
         }
     }
 
     public Product get(Product.Id productId) throws ProductServiceException {
         try {
-            return productPersistence.get(productId);
-        } catch (PersistenceException e) {
+            return productDao.get(productId);
+        } catch (DaoException e) {
             throw new ProductServiceException(e);
         }
     }
 
     public void delete(Product.Id id) throws ProductServiceException {
         try {
-            productPersistence.delete(id);
-        } catch (PersistenceException e) {
+            productDao.delete(id);
+        } catch (DaoException e) {
             throw new ProductServiceException(e);
         }
     }
 
     public void update(Product updatedProduct) throws ProductServiceException {
         try {
-            productPersistence.update(updatedProduct);
-        } catch (PersistenceException e) {
+            productDao.update(updatedProduct);
+        } catch (DaoException e) {
             throw new ProductServiceException(e);
         }
     }
 
     public List<Product> getAllFiltered(String searchExpression) throws ProductServiceException {
         try {
-            return productPersistence.getAllFiltered(searchExpression);
-        } catch (PersistenceException e) {
+            return productDao.getAllFiltered(searchExpression);
+        } catch (DaoException e) {
             throw new ProductServiceException(e);
         }
     }

@@ -4,8 +4,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import ua.yelisieiev.entity.Product;
-import ua.yelisieiev.persistence.PersistenceException;
-import ua.yelisieiev.service.mock.ProductPersistenceMock;
+import ua.yelisieiev.dao.DaoException;
+import ua.yelisieiev.service.mock.MockProductDao;
 
 import java.sql.SQLException;
 
@@ -16,8 +16,8 @@ public class ProductsServiceTest {
     private ProductsService productsService;
 
     @BeforeEach
-    private void createService() throws PersistenceException, SQLException {
-        productsService = new ProductsService(new ProductPersistenceMock());
+    private void createService() throws DaoException, SQLException {
+        productsService = new ProductsService(new MockProductDao());
     }
 
     @DisplayName("With empty persistence - add a product - and check if the service returns it")

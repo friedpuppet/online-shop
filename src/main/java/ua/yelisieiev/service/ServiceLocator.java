@@ -1,9 +1,9 @@
 package ua.yelisieiev.service;
 
 import org.postgresql.ds.PGSimpleDataSource;
-import ua.yelisieiev.persistence.PersistenceException;
-import ua.yelisieiev.persistence.ProductPersistence;
-import ua.yelisieiev.persistence.jdbc.JdbcProductPersistence;
+import ua.yelisieiev.dao.DaoException;
+import ua.yelisieiev.dao.ProductDao;
+import ua.yelisieiev.dao.jdbc.JdbcProductDao;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,17 +22,17 @@ public class ServiceLocator {
         dataSource.setUser("spawn_admin_uBsj");
         dataSource.setPassword("4AXKnwjUxnEzFuMa");
 
-        ProductPersistence productPersistence = null;
+        ProductDao productDao = null;
         try {
-            productPersistence = new JdbcProductPersistence(dataSource);
-        } catch (PersistenceException e) {
+            productDao = new JdbcProductDao(dataSource);
+        } catch (DaoException e) {
             throw new RuntimeException(e);
         }
-        ProductsService productsService = new ProductsService(productPersistence);
+        ProductsService productsService = new ProductsService(productDao);
         addService(ProductsService.class, productsService);
 
-        SecurityService securityService = new SecurityService(dataSource);
-        addService(SecurityService.class, securityService);
+//        SecurityService securityService = new SecurityService(dataSource);
+//        addService(SecurityService.class, securityService);
     }
 
     public static <T> T getService(Class<T> serviceType) {
