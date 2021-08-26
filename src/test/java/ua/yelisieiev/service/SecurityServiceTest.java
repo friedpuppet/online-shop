@@ -4,7 +4,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import ua.yelisieiev.dao.SecurityDao;
-import ua.yelisieiev.entity.AuthTokenWithTTL;
+import ua.yelisieiev.entity.Role;
+import ua.yelisieiev.entity.TokenWithTTL;
 import ua.yelisieiev.service.mock.MockSecurityDao;
 
 import java.sql.SQLException;
@@ -23,9 +24,9 @@ class SecurityServiceTest {
         SecurityDao dao = new MockSecurityDao();
 
         securityService = new SecurityService(dao);
-        securityService.createUser("root", "GOD");
+        securityService.createUser("root", "GOD", Role.ADMIN);
         securityService.createUser("alex", "DEVIL");
-        AuthTokenWithTTL rootToken = new AuthTokenWithTTL("0d0d611a-1994-46c2-a763-d47ca5df6f38", LocalDateTime.now().plusHours(4));
+        TokenWithTTL rootToken = new TokenWithTTL("0d0d611a-1994-46c2-a763-d47ca5df6f38", LocalDateTime.now().plusHours(4));
         securityService.createAndSaveToken("root");
     }
 
@@ -50,7 +51,7 @@ class SecurityServiceTest {
     @DisplayName("Using existing login - create new token - and get its value")
     @Test
     void test_createToken_getValue() {
-        AuthTokenWithTTL token = securityService.createAndSaveToken("root");
+        TokenWithTTL token = securityService.createAndSaveToken("root");
         assertNotNull(token);
         assertEquals(token.getToken().length(), 36);
     }
@@ -64,7 +65,7 @@ class SecurityServiceTest {
     @DisplayName("Check existing token - receive true")
     @Test
     void test_checkValidToken_getTrue() {
-        AuthTokenWithTTL token = securityService.createAndSaveToken("root");
+        TokenWithTTL token = securityService.createAndSaveToken("root");
         assertTrue(securityService.isTokenValid(token.getToken()));
     }
 
@@ -77,7 +78,7 @@ class SecurityServiceTest {
     @DisplayName("With existing token - logout")
     @Test
     void test_existingTokenLogout() {
-        Optional<AuthTokenWithTTL> token = securityService.login("root", "GOD");
+        Optional<TokenWithTTL> token = securityService.login("root", "GOD");
         securityService.logout(token.get().getToken());
         assertFalse(securityService.isTokenValid(token.get().getToken()));
     }
@@ -89,4 +90,18 @@ class SecurityServiceTest {
         assertFalse(securityService.isTokenValid("000000000"));
     }
 
+    @DisplayName("With existing token - get role ADMIN")
+    @Test
+    void test_existingToken_getRoleAdmin() {
+        Optional<TokenWithTTL> token = securityService.login("root", "GOD");
+        Role role = securityService.getTokenRole(token.get().getToken());
+        assertEquals(Role.ADMIN, role);
+    }
+
+    @DisplayName("With nonexistent token - get role GUEST")
+    @Test
+    void test_nonexistentToken_getRoleGuest() {
+        Role role = securityService.getTokenRole("123");
+        assertEquals(Role.GUEST, role);
+    }
 }

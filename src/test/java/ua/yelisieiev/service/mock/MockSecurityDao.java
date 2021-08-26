@@ -1,18 +1,19 @@
 package ua.yelisieiev.service.mock;
 
 import ua.yelisieiev.dao.SecurityDao;
-import ua.yelisieiev.entity.AuthTokenWithTTL;
+import ua.yelisieiev.entity.Role;
+import ua.yelisieiev.entity.TokenWithTTL;
 import ua.yelisieiev.entity.User;
 
 import java.util.*;
 
 public class MockSecurityDao implements SecurityDao {
     private final List<User> usersDB = new ArrayList<>(2);
-    private final Map<String, AuthTokenWithTTL> usersTokensMap = new HashMap<>(2);
+    private final Map<String, TokenWithTTL> usersTokensMap = new HashMap<>(2);
 
     @Override
-    public Optional<AuthTokenWithTTL> getTokenByString(String tokenString) {
-        for (AuthTokenWithTTL token : usersTokensMap.values()) {
+    public Optional<TokenWithTTL> getTokenByString(String tokenString) {
+        for (TokenWithTTL token : usersTokensMap.values()) {
             if (token == null) {
                 continue;
             }
@@ -24,7 +25,7 @@ public class MockSecurityDao implements SecurityDao {
     }
 
     @Override
-    public void saveUserToken(String login, AuthTokenWithTTL token) {
+    public void saveUserToken(String login, TokenWithTTL token) {
         if (!usersTokensMap.containsKey(login)) {
             throw new RuntimeException("No user");
         }
@@ -33,8 +34,8 @@ public class MockSecurityDao implements SecurityDao {
 
     @Override
     public void deleteToken(String tokenString) {
-        for (Map.Entry<String, AuthTokenWithTTL> entry : usersTokensMap.entrySet()) {
-            AuthTokenWithTTL value = entry.getValue();
+        for (Map.Entry<String, TokenWithTTL> entry : usersTokensMap.entrySet()) {
+            TokenWithTTL value = entry.getValue();
             if (value == null) {
                 continue;
             }
@@ -56,6 +57,25 @@ public class MockSecurityDao implements SecurityDao {
         for (User user : usersDB) {
             if (user.getLogin().equals(login)) {
                 return Optional.of(user);
+            }
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<Role> getTokenRole(String tokenString) {
+        Optional<User> user = getUserByToken(tokenString);
+        if (user.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(user.get().getRole());
+    }
+
+    private Optional<User> getUserByToken(String tokenString) {
+        for (Map.Entry<String, TokenWithTTL> entry : usersTokensMap.entrySet()) {
+            TokenWithTTL value = entry.getValue();
+            if (value != null && value.getToken().equals(tokenString)) {
+                return getUser(entry.getKey());
             }
         }
         return Optional.empty();

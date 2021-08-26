@@ -11,7 +11,6 @@ import org.springframework.web.server.ResponseStatusException;
 import ua.yelisieiev.entity.Product;
 import ua.yelisieiev.service.ProductServiceException;
 import ua.yelisieiev.service.ProductsService;
-import ua.yelisieiev.web.PageWriter;
 
 import java.util.List;
 
@@ -22,8 +21,6 @@ public class ProductsController {
 
     @Autowired
     private ProductsService productsService;
-
-    private final PageWriter pageWriter = new PageWriter();
 
     @RequestMapping("/")
     protected String defaultPage() {

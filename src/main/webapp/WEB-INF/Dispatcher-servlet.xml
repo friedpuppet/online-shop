@@ -21,6 +21,10 @@
         <property name="dataSource" ref="pgSimpleDataSource"/>
     </bean>
 
+    <bean id="securityFilter" class="ua.yelisieiev.web.filter.SecurityFilter">
+        <property name="securityService" ref="securityService"/>
+    </bean>
+
     <bean id="securityService" class="ua.yelisieiev.service.SecurityService">
         <property name="dao" ref="jdbcSecurityDao"/>
     </bean>

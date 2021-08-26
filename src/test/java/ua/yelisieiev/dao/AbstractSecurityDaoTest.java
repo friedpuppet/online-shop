@@ -2,7 +2,8 @@ package ua.yelisieiev.dao;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import ua.yelisieiev.entity.AuthTokenWithTTL;
+import ua.yelisieiev.entity.Role;
+import ua.yelisieiev.entity.TokenWithTTL;
 import ua.yelisieiev.entity.User;
 
 import java.time.LocalDateTime;
@@ -25,11 +26,27 @@ public abstract class AbstractSecurityDaoTest {
         user.setPasswordHash("3c65c03eff4cd7bbf574ee64d19c28c73fcc238f");
         securityDao.createUser(user);
 
-        AuthTokenWithTTL token = new AuthTokenWithTTL("25b72a92-9123-4f27-8331-5aaa1b069863", LocalDateTime.now().plusHours(4));
+        TokenWithTTL token = new TokenWithTTL("25b72a92-9123-4f27-8331-5aaa1b069863", LocalDateTime.now().plusHours(4));
         securityDao.saveUserToken("root", token);
-        final Optional<AuthTokenWithTTL> tokenByString = securityDao.getTokenByString("25b72a92-9123-4f27-8331-5aaa1b069863");
+        Optional<TokenWithTTL> tokenByString = securityDao.getTokenByString("25b72a92-9123-4f27-8331-5aaa1b069863");
         assertFalse(tokenByString.isEmpty());
         assertEquals("25b72a92-9123-4f27-8331-5aaa1b069863", tokenByString.get().getToken());
+    }
+
+    @DisplayName("For authorized ADMIN user - get role")
+    @Test
+    void getTokenRole() {
+        User user = new User("root");
+        user.setPasswordSalt("0d0d611a-1994-46c2-a763-d47ca5df6f38");
+        user.setPasswordHash("3c65c03eff4cd7bbf574ee64d19c28c73fcc238f");
+        user.setRole(Role.ADMIN);
+        securityDao.createUser(user);
+
+        TokenWithTTL token = new TokenWithTTL("25b72a92-9123-4f27-8331-5aaa1b069863", LocalDateTime.now().plusHours(4));
+        securityDao.saveUserToken("root", token);
+        Optional<Role> roleOptional = securityDao.getTokenRole("25b72a92-9123-4f27-8331-5aaa1b069863");
+        assertFalse(roleOptional.isEmpty());
+        assertEquals(Role.ADMIN, roleOptional.get());
     }
 
     @DisplayName("For precreated user - retrieve user and check its attributes")
@@ -55,12 +72,12 @@ public abstract class AbstractSecurityDaoTest {
         user.setPasswordSalt("0d0d611a-1994-46c2-a763-d47ca5df6f38");
         user.setPasswordHash("3c65c03eff4cd7bbf574ee64d19c28c73fcc238f");
         securityDao.createUser(user);
-        AuthTokenWithTTL token = new AuthTokenWithTTL("25b72a92-9123-4f27-8331-5aaa1b069863", LocalDateTime.now().plusHours(4));
+        TokenWithTTL token = new TokenWithTTL("25b72a92-9123-4f27-8331-5aaa1b069863", LocalDateTime.now().plusHours(4));
         securityDao.saveUserToken("root", token);
 
         securityDao.deleteToken("25b72a92-9123-4f27-8331-5aaa1b069863");
 
-        final Optional<AuthTokenWithTTL> storedToken = securityDao.getTokenByString("25b72a92-9123-4f27-8331-5aaa1b069863");
+        final Optional<TokenWithTTL> storedToken = securityDao.getTokenByString("25b72a92-9123-4f27-8331-5aaa1b069863");
         assertTrue(storedToken.isEmpty());
     }
 }

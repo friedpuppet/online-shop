@@ -1,12 +1,23 @@
 package ua.yelisieiev.entity;
 
 public class User {
-    String login;
-    String passwordSalt;
-    String passwordHash;
+    private final String login;
+    private String passwordSalt;
+    private String passwordHash;
+    private Role role;
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
 
     public User(String login) {
         this.login = login;
+        // default
+        role = Role.GUEST;
     }
 
     public void setPasswordSalt(String passwordSalt) {

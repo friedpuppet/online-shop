@@ -41,17 +41,17 @@
             <td>${product.price?string.computer}</td>
             <td>${(product.modifyDate?string["dd.MM.yyyy, HH:mm"])!""}</td>
             <td>
-                <a href="/product/${product.id}/edit">
+                <a href="/admin/product/${product.id}/edit">
                     <button class="btn btn-secondary">Edit</button>
                 </a>
-                <form action="/product/${product.id}/delete" method="POST">
+                <form action="/admin/product/${product.id}/delete" method="POST">
                     <button class="btn btn-danger">Delete</button>
                 </form>
             </td>
         </tr>
     </#list>
     </table>
-    <form action="/product/new">
+    <form action="/admin/product/new">
         <button type="submit" class="btn btn-primary">Add</button>
     </form>
 </div>

@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
-import ua.yelisieiev.entity.AuthTokenWithTTL;
+import ua.yelisieiev.entity.TokenWithTTL;
 import ua.yelisieiev.service.SecurityService;
 
 import javax.servlet.http.Cookie;
@@ -36,7 +36,7 @@ public class UserSessionController extends HttpServlet {
 
     @PostMapping("/login")
     public String login(@RequestParam String login, @RequestParam String password, HttpServletResponse resp) {
-        final Optional<AuthTokenWithTTL> token = securityService.login(login, password);
+        final Optional<TokenWithTTL> token = securityService.login(login, password);
         if (token.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
         }
