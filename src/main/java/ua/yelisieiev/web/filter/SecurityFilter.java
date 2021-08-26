@@ -17,21 +17,27 @@ import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 
+@Component
 public class SecurityFilter extends HttpFilter {
     public final Logger log = LoggerFactory.getLogger(this.getClass());
 
-    @Autowired
+//    @Autowired
     private SecurityService securityService;
 
+    @Autowired
     public void setSecurityService(SecurityService securityService) {
         this.securityService = securityService;
     }
+
+//    public SecurityFilter(SecurityService securityService) {
+//        this.securityService = securityService;
+//    }
 
     @Override
     protected void doFilter(HttpServletRequest req, HttpServletResponse res, FilterChain chain) throws IOException, ServletException {
         String token = null;
 
-        final Cookie[] cookies = req.getCookies();
+        Cookie[] cookies = req.getCookies();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
                 if ("auth-token".equals(cookie.getName())) {

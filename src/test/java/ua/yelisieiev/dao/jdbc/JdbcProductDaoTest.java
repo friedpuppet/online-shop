@@ -4,6 +4,7 @@ import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.configuration.FluentConfiguration;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.jdbc.core.JdbcTemplate;
 import ua.yelisieiev.dao.DaoException;
 import ua.yelisieiev.dao.AbstractProductDaoTest;
 
@@ -23,6 +24,6 @@ class JdbcProductDaoTest extends AbstractProductDaoTest {
         flyway.clean();
         flyway.migrate();
 
-        setDao(new JdbcProductDao(dataSource));
+        setDao(new JdbcProductDao(new JdbcTemplate(dataSource)));
     }
 }

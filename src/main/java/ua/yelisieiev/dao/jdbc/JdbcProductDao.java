@@ -1,160 +1,94 @@
 package ua.yelisieiev.dao.jdbc;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import ua.yelisieiev.entity.Product;
 import ua.yelisieiev.dao.ProductDao;
 import ua.yelisieiev.dao.DaoException;
 
-import javax.sql.DataSource;
 import java.sql.*;
-import java.util.LinkedList;
 import java.util.List;
 
 public class JdbcProductDao implements ProductDao {
-    public void setDataSource(DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
+    private final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
+    private static final RowMapper<Product> PRODUCT_ROW_MAPPER =
+            (ResultSet resultSet, int rowNum) -> getProductFromResultSetRow(resultSet);
 
-    private DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
 
-    public JdbcProductDao(DataSource dataSource) throws DaoException {
-        this.dataSource = dataSource;
+    public JdbcProductDao(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
     public List<Product> getAll() throws DaoException {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement getAllStatement = getGetAllStatement(connection)) {
-            getAllStatement.execute();
-            try (ResultSet resultSet = getAllStatement.getResultSet()) {
-                LinkedList<Product> products = new LinkedList<>();
-                while (resultSet.next()) {
-                    Product product = getProductFromResultSetRow(resultSet);
-                    products.add(product);
-                }
-                return products;
-            }
-        } catch (SQLException e) {
-            throw new DaoException("Unable to get products", e);
-        }
+        return jdbcTemplate.query("select id, name, price, description, modify_date " +
+                        "from onlineshop.products",
+                PRODUCT_ROW_MAPPER);
     }
 
     @Override
     public List<Product> getAllFiltered(String searchExpression) throws DaoException {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement getAllFilteredStatement = getGetAllFilteredStatement(connection)) {
-            getAllFilteredStatement.setString(1, "%" + searchExpression + "%");
-            getAllFilteredStatement.setString(2, "%" + searchExpression + "%");
-            getAllFilteredStatement.execute();
-            try (ResultSet resultSet = getAllFilteredStatement.getResultSet()) {
-                LinkedList<Product> products = new LinkedList<>();
-                while (resultSet.next()) {
-                    Product product = getProductFromResultSetRow(resultSet);
-                    products.add(product);
-                }
-                return products;
-            }
-        } catch (SQLException e) {
-            throw new DaoException("Unable to get products", e);
-        }
+        String likeExpr = "%" + searchExpression + "%";
+        return jdbcTemplate.query("select id, name, price, description, modify_date " +
+                        "from onlineshop.products prods " +
+                        "WHERE prods.name like ? or prods.description like ?",
+                PRODUCT_ROW_MAPPER,
+                likeExpr, likeExpr);
     }
 
     @Override
-    synchronized public void add(Product product) throws DaoException {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement addStatement = getAddStatement(connection)) {
-//            addStatement.setInt(1, newId);
-            addStatement.setString(1, product.getName());
-            addStatement.setDouble(2, product.getPrice());
-            addStatement.setString(3, product.getDescription());
-            addStatement.executeUpdate();
-            try(ResultSet keySet = addStatement.getGeneratedKeys()) {
-                keySet.next();
-                int newId = keySet.getInt(1);
-                product.setId(new Product.Id(newId));
-            }
-        } catch (SQLException e) {
-            throw new DaoException("Unable to add product " + product, e);
-        }
+    public void add(Product product) throws DaoException {
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(ps -> {
+                    PreparedStatement preparedStatement = ps.prepareStatement(
+                            "insert into onlineshop.products(name, price, description, modify_date) " +
+                                    "values (?, ?, ?, current_timestamp)", Statement.RETURN_GENERATED_KEYS);
+                    preparedStatement.setString(1, product.getName());
+                    preparedStatement.setDouble(2, product.getPrice());
+                    preparedStatement.setString(3, product.getDescription());
+                    return preparedStatement;
+                },
+                keyHolder);
+//        LOGGER.info("Key list size {}", keyHolder.getKeyList().size());
+        product.setId(new Product.Id((Integer) keyHolder.getKeys().get("id")));
     }
 
     @Override
     public Product get(Product.Id productId) throws DaoException {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement getStatement = getGetStatement(connection)) {
-            getStatement.setInt(1, productId.getValue());
-            getStatement.execute();
-            try (ResultSet resultSet = getStatement.getResultSet()) {
-                if (!resultSet.next()) {
-                    return null;
-                }
-                return getProductFromResultSetRow(resultSet);
-            }
-        } catch (SQLException e) {
-            throw new DaoException("Unable to get product with id {" + productId + "}", e);
+        try {
+            return jdbcTemplate.queryForObject("select id, name, price, description, modify_date " +
+                            "from onlineshop.products where id = ?",
+                    PRODUCT_ROW_MAPPER,
+                    productId.getValue());
+        } catch (EmptyResultDataAccessException e) {
+            return null;
         }
     }
 
     @Override
     public void delete(Product.Id productId) throws DaoException {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement getStatement = getDeleteStatement(connection)) {
-            getStatement.setInt(1, productId.getValue());
-            getStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new DaoException("Unable to delete product with id {" + productId + "}", e);
-        }
+        jdbcTemplate.update("delete from onlineshop.products where id = ?", productId.getValue());
     }
 
     @Override
     public void update(Product updatedProduct) throws DaoException {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement updateStatement = getUpdateStatement(connection)) {
-            updateStatement.setString(1, updatedProduct.getName());
-            updateStatement.setDouble(2, updatedProduct.getPrice());
-            updateStatement.setString(3, updatedProduct.getDescription());
-            updateStatement.setInt(4, updatedProduct.getId().getValue());
-            updateStatement.executeUpdate();
-            if (updateStatement.getUpdateCount() == 0) {
-                throw new DaoException("No product to update");
-            }
-        } catch (SQLException e) {
-            throw new DaoException("Unable to update product " + updatedProduct, e);
+        final int updatedCount = jdbcTemplate.update("update onlineshop.products " +
+                        "set name = ?, price = ?, description = ?, modify_date = current_timestamp " +
+                        "where id = ?",
+                updatedProduct.getName(), updatedProduct.getPrice(), updatedProduct.getDescription(),
+                updatedProduct.getId().getValue());
+        if (updatedCount == 0) {
+            throw new DaoException("No product to update");
         }
     }
 
-    private PreparedStatement getAddStatement(Connection connection) throws SQLException {
-        String ADD_SQL = "insert into onlineshop.products(name, price, description, modify_date) values (?, ?, ?, current_timestamp)";
-        return connection.prepareStatement(ADD_SQL, Statement.RETURN_GENERATED_KEYS);
-    }
-
-    private PreparedStatement getGetAllStatement(Connection connection) throws SQLException {
-        // being straightforward here; no reflection-autogeneration
-        String GETALL_SQL = "select id, name, price, description, modify_date from onlineshop.products";
-        return connection.prepareStatement(GETALL_SQL);
-    }
-
-    private PreparedStatement getGetAllFilteredStatement(Connection connection) throws SQLException {
-        String GETALL_SQL = "select id, name, price, description, modify_date from onlineshop.products prods" +
-                " WHERE prods.name like ? or prods.description like ?";
-        return connection.prepareStatement(GETALL_SQL);
-    }
-
-    private PreparedStatement getGetStatement(Connection connection) throws SQLException {
-        String GET_SQL = "select id, name, price, description, modify_date from onlineshop.products where id = ?";
-        return connection.prepareStatement(GET_SQL);
-    }
-
-    private PreparedStatement getDeleteStatement(Connection connection) throws SQLException {
-        String DELETE_SQL = "delete from onlineshop.products where id = ?";
-        return connection.prepareStatement(DELETE_SQL);
-    }
-
-    private PreparedStatement getUpdateStatement(Connection connection) throws SQLException {
-        String UPDATE_SQL = "update onlineshop.products set name = ?, price = ?, description = ?, modify_date = current_timestamp where id = ?";
-        return connection.prepareStatement(UPDATE_SQL);
-    }
-
-    private Product getProductFromResultSetRow(ResultSet resultSet) throws SQLException {
+    private static Product getProductFromResultSetRow(ResultSet resultSet) throws SQLException {
         return new Product(new Product.Id(resultSet.getInt("id")),
                 resultSet.getString("name"),
                 resultSet.getDouble("price"),

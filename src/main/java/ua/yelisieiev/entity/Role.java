@@ -2,7 +2,8 @@ package ua.yelisieiev.entity;
 
 public enum Role {
     ADMIN("ADMIN"),
-    GUEST("GUEST");
+    GUEST("GUEST"),
+    CUSTOMER("CUSTOMER");
 
     private String name;
 
@@ -21,6 +22,9 @@ public enum Role {
         }
         if ("GUEST".equals(roleName)) {
             return GUEST;
+        }
+        if ("CUSTOMER".equals(roleName)) {
+            return CUSTOMER;
         }
         throw new RuntimeException("No such role " + roleName);
     }

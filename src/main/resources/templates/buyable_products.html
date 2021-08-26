@@ -12,17 +12,11 @@
     <title>Products</title>
 </head>
 <body>
+
 <div class="container">
-    <a href="/login">Login</a>
-    <form action="/logout" method="post">
-        <button class="btn btn-primary">Logout</button>
-    </form>
-    <form class="d-flex" action="/products">
-        <input class="form-control me-2" name="search" type="search" placeholder="Search" aria-label="Search">
-        <button class="btn btn-outline-success" type="submit">Search</button>
-    </form>
-    <a href="/products"><button class="btn btn-secondary" type="submit">Clear search</button></a>
-    </nav>
+    <#import "macro.ftl" as macro />
+    <@macro.navbar />
+
     <h1>Available products</h1>
     <table class="table table-info">
         <tr class="table-primary">
@@ -31,7 +25,6 @@
             <th>description</th>
             <th>price</th>
             <th>modifyDate</th>
-            <th>action</th>
         </tr>
         <#list products as product>
         <tr>
@@ -40,20 +33,9 @@
             <td>${product.description!""}</td>
             <td>${product.price?string.computer}</td>
             <td>${(product.modifyDate?string["dd.MM.yyyy, HH:mm"])!""}</td>
-            <td>
-                <a href="/admin/product/${product.id}/edit">
-                    <button class="btn btn-secondary">Edit</button>
-                </a>
-                <form action="/admin/product/${product.id}/delete" method="POST">
-                    <button class="btn btn-danger">Delete</button>
-                </form>
-            </td>
         </tr>
-    </#list>
+        </#list>
     </table>
-    <form action="/admin/product/new">
-        <button type="submit" class="btn btn-primary">Add</button>
-    </form>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-U1DAWAznBHeqEIlVSCgzq+c9gqGAJn5c/t99JyeKa9xxaYpSvHU5awsuZVVFIhvj"

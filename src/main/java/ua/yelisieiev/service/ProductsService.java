@@ -9,12 +9,11 @@ import java.util.List;
 
 public class ProductsService {
 
-    public void setProductDao(ProductDao productDao) {
-        this.productDao = productDao;
-    }
+//    public void setProductDao(ProductDao productDao) {
+//        this.productDao = productDao;
+//    }
 
-    @Autowired
-    private ProductDao productDao;
+    private final ProductDao productDao;
 
     public ProductsService(ProductDao productDao) {
         this.productDao = productDao;

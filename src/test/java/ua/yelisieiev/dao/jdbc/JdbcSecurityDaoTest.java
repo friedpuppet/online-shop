@@ -5,6 +5,7 @@ import org.flywaydb.core.api.configuration.FluentConfiguration;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.jdbc.core.JdbcTemplate;
 import ua.yelisieiev.dao.AbstractSecurityDaoTest;
 
 class JdbcSecurityDaoTest extends AbstractSecurityDaoTest {
@@ -23,6 +24,6 @@ class JdbcSecurityDaoTest extends AbstractSecurityDaoTest {
         flyway.clean();
         flyway.migrate();
 
-        setDao(new JdbcSecurityDao(dataSource));
+        setDao(new JdbcSecurityDao(new JdbcTemplate(dataSource)));
     }
 }

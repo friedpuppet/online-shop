@@ -22,10 +22,9 @@ import java.util.Optional;
 public class UserSessionController extends HttpServlet {
     public final Logger log = LoggerFactory.getLogger(this.getClass());
 
-    @Autowired
     private SecurityService securityService;
 
-    public void setSecurityService(SecurityService securityService) {
+    public UserSessionController(SecurityService securityService) {
         this.securityService = securityService;
     }
 

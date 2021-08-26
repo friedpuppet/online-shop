@@ -1,142 +1,106 @@
 package ua.yelisieiev.dao.jdbc;
 
-import ua.yelisieiev.dao.DaoException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import ua.yelisieiev.dao.SecurityDao;
 import ua.yelisieiev.entity.Role;
 import ua.yelisieiev.entity.TokenWithTTL;
 import ua.yelisieiev.entity.User;
 
-import javax.sql.DataSource;
-import java.sql.*;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
 public class JdbcSecurityDao implements SecurityDao {
+    private final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
+    private static final RowMapper<User> USER_ROW_MAPPER =
+            (ResultSet resultSet, int rowNum) -> getUserFromResultSetRow(resultSet);
+    private static final RowMapper<TokenWithTTL> TOKEN_ROW_MAPPER =
+            (ResultSet resultSet, int rowNum) -> getTokenFromResultSetRow(resultSet);
+    private static final RowMapper<Role> ROLE_ROW_MAPPER =
+            (ResultSet resultSet, int rowNum) -> getRoleFromResultSetRow(resultSet);
 
-    DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
 
-    public JdbcSecurityDao(DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
-
-    public void setDataSource(DataSource dataSource) {
-        this.dataSource = dataSource;
+    public JdbcSecurityDao(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
     public Optional<TokenWithTTL> getTokenByString(String tokenString) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.
-                     prepareStatement("SELECT t.valid_until FROM onlineshop.tokens t " +
-                             "WHERE t.token = ? and t.valid_until >= CURRENT_TIMESTAMP;")) {
-            statement.setString(1, tokenString);
-            statement.execute();
-            try (ResultSet resultSet = statement.getResultSet()) {
-                if (!resultSet.next()) {
-                    return Optional.empty();
-                }
-                final LocalDateTime valid_until = resultSet.getTimestamp("valid_until").toLocalDateTime();
-                TokenWithTTL tokenWithTTL = new TokenWithTTL(tokenString, valid_until);
-                return Optional.of(tokenWithTTL);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error retrieving token", e);
+        try {
+            TokenWithTTL token = jdbcTemplate.queryForObject("SELECT t.token, t.valid_until FROM onlineshop.tokens t " +
+                    "WHERE t.token = ? and t.valid_until >= CURRENT_TIMESTAMP;", TOKEN_ROW_MAPPER, tokenString);
+            return Optional.ofNullable(token);
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
         }
     }
 
     @Override
     public void saveUserToken(String login, TokenWithTTL token) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.
-                     prepareStatement("INSERT INTO onlineshop.tokens (token, user_id, valid_until) \n" +
-                             "VALUES (?, (select u.id from onlineshop.users u where u.name = ?), ?);")) {
-            statement.setString(1, token.getToken());
-            statement.setString(2, login);
-            statement.setTimestamp(3, Timestamp.valueOf(token.getValidUntil()));
-            statement.execute();
-            if (statement.getUpdateCount() != 1) {
-                throw new DaoException("Exactly one row should've been inserted, but the number is " +
-                        statement.getUpdateCount());
-            }
-        } catch (SQLException | DaoException e) {
-            throw new RuntimeException("Error retrieving token", e);
-        }
+        jdbcTemplate.update("INSERT INTO onlineshop.tokens (token, user_id, valid_until) " +
+                        "VALUES (?, (select u.id from onlineshop.users u where u.name = ?), ?);",
+                token.getToken(), login, Timestamp.valueOf(token.getValidUntil()));
     }
 
     @Override
     public void deleteToken(String tokenString) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.
-                     prepareStatement("DELETE FROM onlineshop.tokens WHERE token = ?;")) {
-            statement.setString(1, tokenString);
-            statement.execute();
-        } catch (SQLException e) {
-            throw new RuntimeException("Error deleting token", e);
-        }
+        jdbcTemplate.update("DELETE FROM onlineshop.tokens WHERE token = ?;",
+                tokenString);
     }
 
     @Override
     public Optional<Role> getTokenRole(String tokenString) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.
-                     prepareStatement("SELECT u.role_name FROM onlineshop.tokens t " +
-                             "JOIN onlineshop.users u ON t.user_id = u.id " +
-                             "WHERE t.token = ?")) {
-            statement.setString(1, tokenString);
-            statement.execute();
-            try (ResultSet resultSet = statement.getResultSet()) {
-                if (!resultSet.next()) {
-                    return Optional.empty();
-                }
-                Role role = Role.of(resultSet.getString("role_name"));
-                return Optional.of(role);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error retrieving token", e);
+        try {
+            Role role = jdbcTemplate.queryForObject("SELECT u.role_name FROM onlineshop.tokens t " +
+                    "JOIN onlineshop.users u ON t.user_id = u.id " +
+                    "WHERE t.token = ?", ROLE_ROW_MAPPER, tokenString);
+            return Optional.ofNullable(role);
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
         }
     }
 
     @Override
     public void createUser(User user) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.
-                     prepareStatement("INSERT INTO onlineshop.users(" +
-                             "name, password_hash, salt, role_name) " +
-                             "VALUES (?, ?, ?, ?);")) {
-            statement.setString(1, user.getLogin());
-            statement.setString(2, user.getPasswordHash());
-            statement.setString(3, user.getPasswordSalt());
-            statement.setString(4, user.getRole().toString());
-            statement.execute();
-            if (statement.getUpdateCount() != 1) {
-                throw new DaoException("Exactly one row should've been inserted, but the number is " +
-                        statement.getUpdateCount());
-            }
-        } catch (SQLException | DaoException e) {
-            throw new RuntimeException("Error retrieving token", e);
-        }
+        jdbcTemplate.update("INSERT INTO onlineshop.users(" +
+                        "name, password_hash, salt, role_name) " +
+                        "VALUES (?, ?, ?, ?);",
+                user.getLogin(), user.getPasswordHash(), user.getPasswordSalt(), user.getRole().toString());
     }
 
     @Override
     public Optional<User> getUser(String login) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.
-                     prepareStatement("select u.password_hash, u.salt, u.role_name from onlineshop.users u where u.name = ?")) {
-            statement.setString(1, login);
-            statement.execute();
-            try (ResultSet resultSet = statement.getResultSet()) {
-                if (!resultSet.next()) {
-                    return Optional.empty();
-                }
-                User user = new User(login);
-                user.setPasswordHash(resultSet.getString("password_hash"));
-                user.setPasswordSalt(resultSet.getString("salt"));
-                user.setRole(Role.of(resultSet.getString("role_name")));
-                return Optional.of(user);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error retrieving token", e);
+        try {
+            User user = jdbcTemplate.queryForObject("select u.name, u.password_hash, u.salt, u.role_name " +
+                    "from onlineshop.users u where u.name = ?", USER_ROW_MAPPER, login);
+            return Optional.ofNullable(user);
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
         }
     }
 
+    private static Role getRoleFromResultSetRow(ResultSet resultSet) throws SQLException {
+        return Role.of(resultSet.getString("role_name"));
+    }
+
+    private static User getUserFromResultSetRow(ResultSet resultSet) throws SQLException {
+        User user = new User(resultSet.getString("name"));
+        user.setPasswordHash(resultSet.getString("password_hash"));
+        user.setPasswordSalt(resultSet.getString("salt"));
+        user.setRole(Role.of(resultSet.getString("role_name")));
+        return user;
+    }
+
+    private static TokenWithTTL getTokenFromResultSetRow(ResultSet resultSet) throws SQLException {
+        final String tokenString = resultSet.getString("token");
+        LocalDateTime valid_until = resultSet.getTimestamp("valid_until").toLocalDateTime();
+        return new TokenWithTTL(tokenString, valid_until);
+    }
 }

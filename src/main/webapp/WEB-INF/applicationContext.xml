@@ -13,33 +13,31 @@
 
     <context:component-scan base-package="ua.yelisieiev"/>
 
-    <bean id="productsService" class="ua.yelisieiev.service.ProductsService">
-        <property name="productDao" ref="jdbcProductDao"/>
+    <bean class="org.springframework.context.support.PropertySourcesPlaceholderConfigurer">
+        <property name="location">
+            <value>classpath:application.properties</value>
+        </property>
     </bean>
 
-    <bean id="jdbcProductDao" class="ua.yelisieiev.dao.jdbc.JdbcProductDao">
-        <property name="dataSource" ref="pgSimpleDataSource"/>
-    </bean>
+    <bean id="productsService" class="ua.yelisieiev.service.ProductsService"/>
+    <bean id="productDao" class="ua.yelisieiev.dao.jdbc.JdbcProductDao"/>
 
     <bean id="securityFilter" class="ua.yelisieiev.web.filter.SecurityFilter">
         <property name="securityService" ref="securityService"/>
     </bean>
+    <bean id="securityService" class="ua.yelisieiev.service.SecurityService"/>
+    <bean id="securityDao" class="ua.yelisieiev.dao.jdbc.JdbcSecurityDao"/>
 
-    <bean id="securityService" class="ua.yelisieiev.service.SecurityService">
-        <property name="dao" ref="jdbcSecurityDao"/>
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <property name="dataSource" ref="dataSource"/>
     </bean>
 
-    <bean id="jdbcSecurityDao" class="ua.yelisieiev.dao.jdbc.JdbcSecurityDao">
-        <property name="dataSource" ref="pgSimpleDataSource"/>
-    </bean>
-
-
-    <bean id="pgSimpleDataSource" class="org.postgresql.ds.PGSimpleDataSource">
-        <property name="serverNames" value="instances.spawn.cc"/>
-        <property name="portNumbers" value="32090"/>
-        <property name="databaseName" value="foobardb"/>
-        <property name="user" value="spawn_admin_uBsj"/>
-        <property name="password" value="4AXKnwjUxnEzFuMa"/>
+    <bean id="dataSource" class="org.postgresql.ds.PGSimpleDataSource">
+        <property name="serverNames" value="${jdbc.server.name}"/>
+        <property name="portNumbers" value="${jdbc.server.port}"/>
+        <property name="databaseName" value="${jdbc.database.name}"/>
+        <property name="user" value="${jdbc.user.name}"/>
+        <property name="password" value="${jdbc.user.password}"/>
     </bean>
 
     <!-- freemarker config -->
@@ -47,16 +45,9 @@
         <property name="templateLoaderPath" value="classpath:/templates"/>
     </bean>
 
-    <!--
-      View resolvers can also be configured with ResourceBundles or XML files. If you need
-      different view resolving based on Locale, you have to use the resource bundle resolver.
-    -->
     <bean id="viewResolver" class="org.springframework.web.servlet.view.freemarker.FreeMarkerViewResolver">
         <property name="cache" value="true"/>
         <property name="prefix" value=""/>
         <property name="suffix" value=".html"/>
     </bean>
-
-    <mvc:annotation-driven/>
-
 </beans>

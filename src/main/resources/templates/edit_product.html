@@ -15,11 +15,8 @@
 
 
 <div class="container">
-    <ul class="nav">
-        <li class="nav-item">
-            <a class="nav-link" href="/products"><h1>&lt;-Back to products list</h1></a>
-        </li>
-    </ul>
+    <#import "macro.ftl" as macro />
+    <@macro.navbar />
 
     <h1>Edit product</h1>
     <form action="/admin/product/${product.id}/edit" method="POST">

@@ -1,6 +1,5 @@
 package ua.yelisieiev.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import ua.yelisieiev.dao.SecurityDao;
 import ua.yelisieiev.entity.Role;
 import ua.yelisieiev.entity.TokenWithTTL;
@@ -14,16 +13,15 @@ import java.util.UUID;
 public class SecurityService {
     public static final int TOKEN_TTL_MINUTES = 24 * 60;
 
-    @Autowired
-    private SecurityDao dao;
+    private final SecurityDao securityDao;
 
-    public SecurityService(SecurityDao dao) {
-        this.dao = dao;
+    public SecurityService(SecurityDao securityDao) {
+        this.securityDao = securityDao;
     }
 
-    public void setDao(SecurityDao dao) {
-        this.dao = dao;
-    }
+//    public void setDao(SecurityDao dao) {
+//        this.dao = dao;
+//    }
 
     public Optional<TokenWithTTL> login(String login, String providedPassword) {
         if (!isLoginPassValid(login, providedPassword)) {
@@ -33,7 +31,7 @@ public class SecurityService {
     }
 
     protected boolean isLoginPassValid(String login, String providedPassword) {
-        Optional<User> user = dao.getUser(login);
+        Optional<User> user = securityDao.getUser(login);
         if (user.isEmpty()) {
             return false;
         }
@@ -47,7 +45,7 @@ public class SecurityService {
     protected TokenWithTTL createAndSaveToken(String login) {
         String tokenString = UUID.randomUUID().toString();
         TokenWithTTL token = new TokenWithTTL(tokenString, LocalDateTime.now().plusMinutes(TOKEN_TTL_MINUTES));
-        dao.saveUserToken(login, token);
+        securityDao.saveUserToken(login, token);
         return token;
     }
 
@@ -59,7 +57,7 @@ public class SecurityService {
         if (tokenString == null) {
             return false;
         }
-        Optional<TokenWithTTL> token = dao.getTokenByString(tokenString);
+        Optional<TokenWithTTL> token = securityDao.getTokenByString(tokenString);
         if (token.isEmpty()) {
             return false;
         }
@@ -71,7 +69,7 @@ public class SecurityService {
     }
 
     public Role getTokenRole(String tokenString) {
-        Optional<Role> roleOptional = dao.getTokenRole(tokenString);
+        Optional<Role> roleOptional = securityDao.getTokenRole(tokenString);
         if (roleOptional.isEmpty()) {
             return Role.GUEST;
         }
@@ -88,10 +86,10 @@ public class SecurityService {
         user.setPasswordSalt(passwordSalt);
         user.setPasswordHash(Encrypter.encryptPassword(password, passwordSalt));
         user.setRole(role);
-        dao.createUser(user);
+        securityDao.createUser(user);
     }
 
     public void logout(String tokenString) {
-        dao.deleteToken(tokenString);
+        securityDao.deleteToken(tokenString);
     }
 }

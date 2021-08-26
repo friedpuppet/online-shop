@@ -8,6 +8,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.view.RedirectView;
 import ua.yelisieiev.entity.Product;
 import ua.yelisieiev.service.ProductServiceException;
 import ua.yelisieiev.service.ProductsService;
@@ -16,15 +17,18 @@ import java.util.List;
 
 @RequestMapping("/admin")
 @Controller()
-public class ProductsController {
+public class AdminController {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-    @Autowired
     private ProductsService productsService;
+
+    public AdminController(ProductsService productsService) {
+        this.productsService = productsService;
+    }
 
     @RequestMapping("/")
     protected String defaultPage() {
-        return "redirect:/products";
+        return "redirect:products";
     }
 
     @RequestMapping("/products")
@@ -34,7 +38,7 @@ public class ProductsController {
             List<Product> products;
             products = productsService.getAll();
             model.addAttribute("products", products);
-            return "products";
+            return "editable_products";
         } catch (ProductServiceException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Backend error", e);
         }
@@ -47,7 +51,7 @@ public class ProductsController {
             List<Product> products;
             products = productsService.getAllFiltered(searchExpression);
             model.addAttribute("products", products);
-            return "products";
+            return "editable_products";
         } catch (ProductServiceException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Backend error", e);
         }
@@ -64,7 +68,8 @@ public class ProductsController {
                                 @RequestParam("price") Double price) throws ProductServiceException {
         Product product = new Product(name, price, description);
         productsService.add(product);
-        return "redirect:/products";
+//        return new RedirectView("/products", true);
+        return "redirect:/admin/products";
     }
 
 
@@ -86,14 +91,14 @@ public class ProductsController {
                                  @RequestParam("price") Double price) throws ProductServiceException {
         Product product = new Product(new Product.Id(id), name, price, description);
         productsService.update(product);
-        return "redirect:/products";
+        return "redirect:/admin/products";
     }
 
     @PostMapping("/product/{id}/delete")
     protected String deleteProduct(@PathVariable("id") Integer id) throws ProductServiceException {
         Product.Id productId = new Product.Id(id);
         productsService.delete(productId);
-        return "redirect:/products";
+        return "redirect:/admin/products";
     }
 
 }
