@@ -4,4 +4,4 @@
 *.jar
 **/testdb.mv.db
 flyway.conf
-application.properties
+;application.properties
