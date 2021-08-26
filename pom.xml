@@ -61,6 +61,28 @@
                 <artifactId>jetty-maven-plugin</artifactId>
                 <version>10.0.6</version>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>com.heroku</groupId>
+                                    <artifactId>webapp-runner</artifactId>
+                                    <version>9.0.52.0</version>
+                                    <destFileName>webapp-runner.jar</destFileName>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
@@ -91,30 +113,30 @@
             <version>4.0.1</version>
             <scope>provided</scope>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>jakarta.servlet</groupId>-->
-<!--            <artifactId>jakarta.servlet-api</artifactId>-->
-<!--            <version>5.0.0</version>-->
-<!--            <scope>provided</scope>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>com.tersesystems.logback</groupId>-->
-<!--            <artifactId>logback-classic</artifactId>-->
-<!--            <version>1.0.1</version>-->
-<!--            <scope>provided</scope>-->
-<!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>jakarta.servlet</groupId>-->
+        <!--            <artifactId>jakarta.servlet-api</artifactId>-->
+        <!--            <version>5.0.0</version>-->
+        <!--            <scope>provided</scope>-->
+        <!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>com.tersesystems.logback</groupId>-->
+        <!--            <artifactId>logback-classic</artifactId>-->
+        <!--            <version>1.0.1</version>-->
+        <!--            <scope>provided</scope>-->
+        <!--        </dependency>-->
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>1.2.3</version>
             <scope>provided</scope>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>org.slf4j</groupId>-->
-<!--            <artifactId>slf4j-api</artifactId>-->
-<!--            <version>1.7.30</version>-->
-<!--            <scope>provided</scope>-->
-<!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>org.slf4j</groupId>-->
+        <!--            <artifactId>slf4j-api</artifactId>-->
+        <!--            <version>1.7.30</version>-->
+        <!--            <scope>provided</scope>-->
+        <!--        </dependency>-->
         <dependency>
             <groupId>org.freemarker</groupId>
             <artifactId>freemarker</artifactId>
